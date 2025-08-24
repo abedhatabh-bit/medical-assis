@@ -87,10 +87,16 @@ out/
 
 # Environment files
 .env
+.env.*
+!.env.template
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Backup files with sensitive data
+.env_backup
+*_backup.txt
 
 # Executable files and installers
 *.exe
@@ -169,6 +175,12 @@ ntuser.dat*
 __pycache__/
 *.pyc
 *.pyo
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
 
 # Favorites and Links (Windows specific)
 Favorites/
