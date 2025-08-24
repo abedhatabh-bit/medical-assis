@@ -1,0 +1,176 @@
+# WARNING: This .gitignore was created for a Windows user directory
+# This is NOT recommended practice - user directories should NOT be Git repositories
+
+# Windows system directories and files
+AppData/
+Application Data/
+Cookies/
+Local Settings/
+My Documents/
+NetHood/
+PrintHood/
+Recent/
+SendTo/
+Start Menu/
+Templates/
+
+# Documents and Downloads (personal files)
+Documents/
+Downloads/
+Desktop/
+Pictures/
+Music/
+Videos/
+
+# VirtualBox logs
+.Ld9VirtualBox/
+
+# Cache directories
+.cache/
+
+# Git config (keep only .gitignore)
+.gitconfig
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# node_modules
+node_modules/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Temporary folders
+tmp/
+temp/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build outputs
+build/
+dist/
+out/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Executable files and installers
+*.exe
+*.msi
+*.dmg
+*.pkg
+*.deb
+*.rpm
+
+# Archive files
+*.zip
+*.rar
+*.7z
+*.tar
+*.tar.gz
+*.tar.bz2
+
+# CAD files
+*.dwg
+*.dxf
+*.skp
+*.bak
+
+# Image files
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.tga
+
+# Video files
+*.mp4
+*.avi
+*.mkv
+*.mov
+
+# Audio files
+*.mp3
+*.wav
+*.flac
+
+# Document files
+*.pdf
+*.doc
+*.docx
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+
+# Compressed directories from Downloads
+Compressed/
+
+# Specific files that shouldn't be tracked
+*.tmp
+*.ini
+*.dat
+*.cli
+*.tag
+
+# Windows registry files
+NTUSER.DAT*
+ntuser.dat*
+*.regtrans-ms
+*.TM.blf
+*.TMContainer*
+
+# Windows shortcuts and search files
+*.lnk
+*.url
+*.search-ms
+*.searchconnector-ms
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Favorites and Links (Windows specific)
+Favorites/
+Links/
+Searches/
