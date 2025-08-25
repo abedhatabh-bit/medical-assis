@@ -1,24 +1,12 @@
 import os, json, uuid
 import numpy as np
 from typing import List, Dict
-from openai import OpenAI
-from app.config import OPENAI_API_KEY, EMBED_MODEL
+from app.embedding import embed_texts
+from app.storage import STORE_DIR, CHUNKS_PATH, EMB_PATH, IDMAP_PATH, save_jsonl, load_id_map, save_id_map
 import requests
 from bs4 import BeautifulSoup
 
-STORE_DIR = 'store'
-CHUNKS_PATH = os.path.join(STORE_DIR, 'chunks.jsonl')
-EMB_PATH = os.path.join(STORE_DIR, 'embeddings.npy')
-IDMAP_PATH = os.path.join(STORE_DIR, 'id_map.json')
 os.makedirs(STORE_DIR, exist_ok=True)
-
-_client = None
-
-def get_client() -> OpenAI:
-    global _client
-    if _client is None:
-        _client = OpenAI(api_key=OPENAI_API_KEY)
-    return _client
 
 def clean_text(t: str) -> str:
     return ' '.join(t.split()).strip()
@@ -37,30 +25,6 @@ def chunk_text(text: str, max_chars: int = 900, overlap: int = 100) -> List[str]
             chunks.append(chunk)
         start = max(0, cut - overlap)
     return chunks
-
-def save_jsonl(path: str, rows: List[Dict]) -> None:
-    with open(path, 'a', encoding='utf-8') as f:
-        for r in rows:
-            f.write(json.dumps(r, ensure_ascii=False) + '\n')
-
-def load_id_map() -> list:
-    if os.path.exists(IDMAP_PATH):
-        return json.load(open(IDMAP_PATH, 'r', encoding='utf-8'))
-    return []
-
-def save_id_map(m: list) -> None:
-    json.dump(m, open(IDMAP_PATH, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
-
-def embed_texts(texts: List[str], batch_size: int = 128) -> np.ndarray:
-    client = get_client()
-    all_vecs: List[list] = []
-    for start in range(0, len(texts), batch_size):
-        batch = texts[start:start + batch_size]
-        resp = client.embeddings.create(model=EMBED_MODEL, input=batch)
-        all_vecs.extend([d.embedding for d in resp.data])
-    X = np.array(all_vecs, dtype='float32')
-    norms = np.linalg.norm(X, axis=1, keepdims=True) + 1e-8
-    return X / norms
 
 def chunk_and_index(text: str, meta: Dict) -> Dict:
     chunks = chunk_text(text)
@@ -88,7 +52,7 @@ def ingest_pdf(path: str, meta: Dict) -> Dict:
     doc = fitz.open(path)
     pages = [page.get_text('text') for page in doc]
     text = '\n'.join(pages)
-    return chunk_and_index(text, meta)
+    return chunk_and_index(text, meta | {'source_type': 'pdf', 'path': path})
 
 def ingest_web(url: str, meta: Dict) -> Dict:
     resp = requests.get(url, timeout=30)

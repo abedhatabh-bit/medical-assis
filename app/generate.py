@@ -1,16 +1,8 @@
 from typing import List, Dict
-from openai import OpenAI
-from app.config import OPENAI_API_KEY, OPENAI_MODEL
+from app.clients import get_openai_client
+from app.config import OPENAI_MODEL
 from app.rag import retrieve
 import json, os
-
-_client = None
-
-def get_client() -> OpenAI:
-    global _client
-    if _client is None:
-        _client = OpenAI(api_key=OPENAI_API_KEY)
-    return _client
 
 EXPLANATION_PROMPT = '''You are a medical education expert. Write a concise lesson in English for the specified audience about the requested topic. Use only the quoted passages below. Do not add information from outside them. Return a JSON object with keys: lesson_title, learning_objectives[], key_points[], explanation_sections[{title, content, citations[]}], safety_notes[], glossary[{term, ar, en}], references[{title, year, url_or_doi}] Source excerpts: {context} Topic: {topic} Safety note: This content is for education only and is not medical advice.'''
 
@@ -27,7 +19,7 @@ def build_context(chunks: List[Dict]) -> str:
     return '\n\n'.join(lines)
 
 def generate_json(prompt: str) -> Dict:
-    client = get_client()
+    client = get_openai_client()
     resp = client.chat.completions.create(
         model=OPENAI_MODEL,
         response_format={'type': 'json_object'},
