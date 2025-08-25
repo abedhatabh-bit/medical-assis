@@ -2,7 +2,7 @@ import os, json
 import numpy as np
 from typing import List, Dict
 from openai import OpenAI
-from app.config import OPENAI_API_KEY, EMBED_MODEL
+from app.config import OPENAI_API_KEY, EMBED_MODEL, OFFLINE_MODE, LOCAL_EMBED_DIM
 
 STORE_DIR = 'store'
 CHUNKS_PATH = os.path.join(STORE_DIR, 'chunks.jsonl')
@@ -26,9 +26,13 @@ def load_id_map() -> list:
     return json.load(open(IDMAP_PATH, 'r', encoding='utf-8'))
 
 def embed_query(q: str) -> np.ndarray:
-    client = get_client()
-    resp = client.embeddings.create(model=EMBED_MODEL, input=[q])
-    v = np.array(resp.data[0].embedding, dtype='float32')
+    if OFFLINE_MODE:
+        rng = np.random.default_rng(abs(hash(q)) % (2**32))
+        v = rng.standard_normal(LOCAL_EMBED_DIM).astype('float32')
+    else:
+        client = get_client()
+        resp = client.embeddings.create(model=EMBED_MODEL, input=[q])
+        v = np.array(resp.data[0].embedding, dtype='float32')
     v = v / (np.linalg.norm(v) + 1e-8)
     return v
 
