@@ -1,6 +1,6 @@
 import argparse
 import os
-from app.ingest import ingest_pdf, ingest_web
+from app.ingest import ingest_pdf, ingest_web, ingest_text_file
 from app.generate import make_lesson
 
 def main():
@@ -19,6 +19,12 @@ def main():
     p_web.add_argument('--year', type=int, default=0)
     p_web.add_argument('--publisher', default='')
 
+    p_txt = sub.add_parser('ingest-text', help='Ingest a local UTF-8 text file')
+    p_txt.add_argument('--path', required=True)
+    p_txt.add_argument('--title', required=True)
+    p_txt.add_argument('--year', type=int, default=0)
+    p_txt.add_argument('--publisher', default='')
+
     p_gen = sub.add_parser('generate', help='Generate lesson JSON from store')
     p_gen.add_argument('--topic', required=True)
     p_gen.add_argument('--audience', default='3rd-year medical students')
@@ -31,6 +37,9 @@ def main():
     elif args.cmd == 'ingest-web':
         meta = {'title': args.title, 'year': args.year, 'publisher': args.publisher}
         print(ingest_web(args.url, meta))
+    elif args.cmd == 'ingest-text':
+        meta = {'title': args.title, 'year': args.year, 'publisher': args.publisher}
+        print(ingest_text_file(args.path, meta))
     elif args.cmd == 'generate':
         data = make_lesson(args.topic, audience=args.audience)
         os.makedirs(os.path.dirname(args.out), exist_ok=True)
