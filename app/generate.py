@@ -1,10 +1,9 @@
-﻿from typing import List, Dict
-from openai import OpenAI
-from app.config import OPENAI_API_KEY, OPENAI_MODEL
+from typing import List, Dict
+from app.config import OPENAI_MODEL, get_openai_client
 from app.rag import retrieve
 import json, os
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+_client = None
 
 EXPLANATION_PROMPT = '''You are a medical education expert. Write a concise lesson in English for the specified audience about the requested topic. Use only the quoted passages below. Do not add information from outside them. Return a JSON object with keys: lesson_title, learning_objectives[], key_points[], explanation_sections[{title, content, citations[]}], safety_notes[], glossary[{term, ar, en}], references[{title, year, url_or_doi}] Source excerpts: {context} Topic: {topic} Safety note: This content is for education only and is not medical advice.'''
 
@@ -21,7 +20,10 @@ def build_context(chunks: List[Dict]) -> str:
     return '\\n\\n'.join(lines)
 
 def generate_json(prompt: str) -> Dict:
-    resp = client.chat.completions.create(
+    global _client
+    if _client is None:
+        _client = get_openai_client()
+    resp = _client.chat.completions.create(
         model=OPENAI_MODEL,
         response_format={'type': 'json_object'},
         messages=[{'role': 'user', 'content': prompt}]
@@ -38,9 +40,4 @@ def make_lesson(topic: str, audience: str = '3rd-year medical students') -> Dict
     return {'explanation': explanation, 'flashcards': flashcards, 'quiz': quiz, 'used_chunks': chunks}
 
 if __name__ == '__main__':
-    topic = 'Step 1 First Aid'
-    out = make_lesson(topic)
-    os.makedirs('store/outputs', exist_ok=True)
-    with open('store/outputs/lesson_step1.json', 'w', encoding='utf-8') as f:
-        json.dump(out, f, ensure_ascii=False, indent=2)
-    print('Created: store/outputs/lesson_step1.json')
+    print('Use the CLI: python -m app.cli --help')

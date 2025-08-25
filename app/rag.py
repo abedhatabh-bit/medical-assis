@@ -7,6 +7,7 @@ STORE_DIR = 'store'
 CHUNKS_PATH = os.path.join(STORE_DIR, 'chunks.jsonl')
 EMB_PATH = os.path.join(STORE_DIR, 'embeddings.npy')
 IDMAP_PATH = os.path.join(STORE_DIR, 'id_map.json')
+CHUNK_OFFSETS_PATH = os.path.join(STORE_DIR, 'chunk_offsets.npy')
 
 def load_chunks() -> List[Dict]:
     if not os.path.exists(CHUNKS_PATH): return []
@@ -42,7 +43,27 @@ def retrieve(query: str, k=8) -> List[Dict]:
         part = np.argpartition(-sims, k-1)[:k]
         order = np.argsort(-sims[part])
         top_idx = part[order]
-    # Load only once and map by id
-    rows = load_chunks()
-    id_to_row = {r['id']: r for r in rows}
-    return [id_to_row[id_map[i]] for i in top_idx]
+    # Load only needed rows by using stored byte offsets
+    if not os.path.exists(CHUNK_OFFSETS_PATH):
+        # Fallback to full scan if offsets not present
+        rows = load_chunks()
+        id_to_row = {r['id']: r for r in rows}
+        return [id_to_row[id_map[i]] for i in top_idx]
+    offsets = np.load(CHUNK_OFFSETS_PATH)
+    wanted_ids = [id_map[i] for i in top_idx]
+    wanted_index_set = set(top_idx.tolist())
+    results: List[Dict] = []
+    # Map index -> id for quick lookup
+    with open(CHUNKS_PATH, 'rb') as f:
+        for i in top_idx:
+            f.seek(int(offsets[i]))
+            line = f.readline().decode('utf-8')
+            row = json.loads(line)
+            # Sanity check alignment
+            if row.get('id') != id_map[i]:
+                # Fallback if misaligned
+                rows = load_chunks()
+                id_to_row = {r['id']: r for r in rows}
+                return [id_to_row[id_map[j]] for j in top_idx]
+            results.append(row)
+    return results
