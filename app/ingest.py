@@ -91,16 +91,29 @@ def ingest_pdf(path: str, meta: Dict) -> Dict:
     return chunk_and_index(text, meta)
 
 def ingest_web(url: str, meta: Dict) -> Dict:
-    resp = requests.get(url, timeout=30)
-    resp.raise_for_status()
-    soup = BeautifulSoup(resp.text, 'html.parser')
-    text = clean_text(soup.get_text(' '))
-    return chunk_and_index(text, meta | {'source_type': 'web', 'url': url})
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+    try:
+        resp = requests.get(url, timeout=30, headers=headers)
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, 'html.parser')
+        
+        # Remove script and style elements
+        for script in soup(["script", "style"]):
+            script.decompose()
+            
+        text = clean_text(soup.get_text(' '))
+        return chunk_and_index(text, meta | {'source_type': 'web', 'url': url})
+    except Exception as e:
+        raise RuntimeError(f"Failed to ingest web page: {str(e)}")
 
 if __name__ == '__main__':
-    pdf_sources = [
-        {'path': r'C:\\Users\\Admin\\Downloads\\First Aid for the USMLE Step 1 2025 35th Edition.pdf',
-            'title': 'First Aid Step 1', 'year': 2025, 'publisher': 'McGraw-Hill'}
-    ]
-    for src in pdf_sources:
-        print(ingest_pdf(src['path'], {'title': src['title'], 'year': src['year'], 'publisher': src['publisher']}))
+    # Example usage - update paths as needed
+    # pdf_sources = [
+    #     {'path': '/path/to/your/document.pdf',
+    #         'title': 'Example Document', 'year': 2024, 'publisher': 'Publisher'}
+    # ]
+    # for src in pdf_sources:
+    #     print(ingest_pdf(src['path'], {'title': src['title'], 'year': src['year'], 'publisher': src['publisher']}))
+    print("Ingest module loaded. Use CLI commands to ingest documents.")

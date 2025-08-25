@@ -23,6 +23,8 @@ def load_chunks() -> List[Dict]:
         return [json.loads(line) for line in f]
 
 def load_id_map() -> list:
+    if not os.path.exists(IDMAP_PATH):
+        return []
     return json.load(open(IDMAP_PATH, 'r', encoding='utf-8'))
 
 def embed_query(q: str) -> np.ndarray:

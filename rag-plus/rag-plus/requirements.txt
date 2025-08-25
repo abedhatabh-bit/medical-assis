@@ -1,7 +1,0 @@
-openai>=1.40.0
-python-dotenv
-numpy
-PyMuPDF
-trafilatura[all]
-requests
-beautifulsoup4
