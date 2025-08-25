@@ -3,6 +3,8 @@ import numpy as np
 from typing import List, Dict
 from openai import OpenAI
 from app.config import OPENAI_API_KEY, EMBED_MODEL
+import requests
+from bs4 import BeautifulSoup
 
 STORE_DIR = 'store'
 CHUNKS_PATH = os.path.join(STORE_DIR, 'chunks.jsonl')
@@ -87,6 +89,13 @@ def ingest_pdf(path: str, meta: Dict) -> Dict:
     pages = [page.get_text('text') for page in doc]
     text = '\n'.join(pages)
     return chunk_and_index(text, meta)
+
+def ingest_web(url: str, meta: Dict) -> Dict:
+    resp = requests.get(url, timeout=30)
+    resp.raise_for_status()
+    soup = BeautifulSoup(resp.text, 'html.parser')
+    text = clean_text(soup.get_text(' '))
+    return chunk_and_index(text, meta | {'source_type': 'web', 'url': url})
 
 if __name__ == '__main__':
     pdf_sources = [
