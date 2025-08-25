@@ -45,9 +45,11 @@ def make_lesson(topic: str, audience: str = '3rd-year medical students') -> Dict
     return {'explanation': explanation, 'flashcards': flashcards, 'quiz': quiz, 'used_chunks': chunks}
 
 if __name__ == '__main__':
-    topic = 'Step 1 First Aid'
-    out = make_lesson(topic)
-    os.makedirs('store/outputs', exist_ok=True)
-    with open('store/outputs/lesson_step1.json', 'w', encoding='utf-8') as f:
-        json.dump(out, f, ensure_ascii=False, indent=2)
-    print('Created: store/outputs/lesson_step1.json')
+    # Example usage
+    # topic = 'Medical Topic Example'
+    # out = make_lesson(topic)
+    # os.makedirs('store/outputs', exist_ok=True)
+    # with open('store/outputs/lesson_example.json', 'w', encoding='utf-8') as f:
+    #     json.dump(out, f, ensure_ascii=False, indent=2)
+    # print('Created: store/outputs/lesson_example.json')
+    print("Generate module loaded. Use CLI commands to generate lessons.")
