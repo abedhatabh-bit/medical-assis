@@ -5,6 +5,3 @@ PyMuPDF
 trafilatura[all]
 requests
 beautifulsoup4
-openai
-python-dotenv
-numpy

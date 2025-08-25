@@ -1,8 +1,7 @@
-﻿import os, json, uuid
+import os, json, uuid
 import numpy as np
 from typing import List, Dict
 from openai import OpenAI
-import fitz
 import trafilatura, requests
 from bs4 import BeautifulSoup
 from app.config import OPENAI_API_KEY, EMBED_MODEL
@@ -13,7 +12,7 @@ EMB_PATH = os.path.join(STORE_DIR, "embeddings.npy")
 IDMAP_PATH = os.path.join(STORE_DIR, "id_map.json")
 os.makedirs(STORE_DIR, exist_ok=True)
 
-client = OpenAI(api_key=c86e5278-3e30-4248-ad5e-b7623f320683)
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 def clean_text(t: str) -> str:
     return " ".join(t.split()).strip()
@@ -46,10 +45,13 @@ def load_id_map() -> list:
 def save_id_map(m: list) -> None:
     json.dump(m, open(IDMAP_PATH, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 
-def embed_texts(texts: List[str]) -> np.ndarray:
-    resp = client.embeddings.create(model=EMBED_MODEL, input=texts)
-    vecs = [d.embedding for d in resp.data]
-    X = np.array(vecs, dtype="float32")
+def embed_texts(texts: List[str], batch_size: int = 128) -> np.ndarray:
+    all_vecs = []
+    for start in range(0, len(texts), batch_size):
+        batch = texts[start:start + batch_size]
+        resp = client.embeddings.create(model=EMBED_MODEL, input=batch)
+        all_vecs.extend([d.embedding for d in resp.data])
+    X = np.array(all_vecs, dtype="float32")
     norms = np.linalg.norm(X, axis=1, keepdims=True) + 1e-8
     return X / norms
 
@@ -86,6 +88,7 @@ def ingest_web(url: str, meta: Dict) -> Dict:
     return chunk_and_index(text, meta | {"source_type": "web", "url": url})
 
 def ingest_pdf(path: str, meta: Dict) -> Dict:
+    import fitz  # Lazy import heavy dependency
     doc = fitz.open(path)
     pages = [page.get_text("text") for page in doc]
     text = "\n".join(pages)
@@ -94,7 +97,3 @@ def ingest_pdf(path: str, meta: Dict) -> Dict:
 if __name__ == "__main__":
     url = "https://www.who.int/news-room/fact-sheets/detail/hypertension"
     print(ingest_web(url, {"title": "WHO Hypertension Fact Sheet", "year": 2023, "publisher": "WHO"}))
-    mkdir rag-plus
-cd rag-plus
-code .
-

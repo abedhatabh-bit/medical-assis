@@ -1,4 +1,4 @@
-﻿
+
     import os, json 
     import numpy as np 
     from typing import List, Dict 
@@ -10,8 +10,14 @@
     EMB_PATH = os.path.join(STORE_DIR, "embeddings.npy") 
     IDMAP_PATH = os.path.join(STORE_DIR, "id_map.json") 
      
-    client = OpenAI(api_key=OPENAI_API_KEY) 
-     
+    _client = None
+
+    def get_client() -> OpenAI:
+        global _client
+        if _client is None:
+            _client = OpenAI(api_key=OPENAI_API_KEY)
+        return _client
+
     def load_chunks() -> List[Dict]: 
     if not os.path.exists(CHUNKS_PATH): return [] 
     with open(CHUNKS_PATH, "r", encoding="utf-8") as f: 
@@ -21,20 +27,37 @@
     return json.load(open(IDMAP_PATH, "r", encoding="utf-8")) 
      
     def embed_query(q: str) -> np.ndarray: 
+    client = get_client()
     resp = client.embeddings.create(model=EMBED_MODEL, input=[q]) 
     v = np.array(resp.data[0].embedding, dtype="float32") 
     v = v / (np.linalg.norm(v) + 1e-8) 
     return v 
      
-    def retrieve(query: str, k=8) -> List[Dict]: 
-    if not os.path.exists(EMB_PATH): 
-    raise RuntimeError("No index yet. Ingest sources first.") 
-    X = np.load(EMB_PATH) # normalized row vectors 
-    id_map = load_id_map() 
-    qv = embed_query(query) # normalized 
-    sims = X @ qv 
-    idx = np.argsort(-sims)[:k] 
-    rows = load_chunks() 
-    id_to_row = {r["id"]: r for r in rows} 
-    return [id_to_row[id_map[i]] for i in idx] 
+    def retrieve(query: str, k: int = 8) -> List[Dict]:
+    if not os.path.exists(EMB_PATH):
+    raise RuntimeError("No index yet. Ingest sources first.")
+    X = np.load(EMB_PATH, mmap_mode="r")
+    id_map = load_id_map()
+    qv = embed_query(query)
+    sims = X @ qv
+    if k <= 0:
+    return []
+    if k >= sims.shape[0]:
+    top_idx = np.argsort(-sims)
+    else:
+    part = np.argpartition(-sims, k - 1)[:k]
+    top_idx = part[np.argsort(-sims[part])]
+    target_ids = {id_map[i] for i in top_idx}
+    results_by_id = {}
+    if not os.path.exists(CHUNKS_PATH):
+    raise RuntimeError("Missing chunks store. Ingest sources first.")
+    with open(CHUNKS_PATH, "r", encoding="utf-8") as f:
+    for line in f:
+    row = json.loads(line)
+    rid = row.get("id")
+    if rid in target_ids:
+    results_by_id[rid] = row
+    if len(results_by_id) == len(target_ids):
+    break
+    return [results_by_id[id_map[i]] for i in top_idx]
      
